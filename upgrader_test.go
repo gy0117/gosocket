@@ -3,7 +3,7 @@ package gows
 import (
 	"bufio"
 	"bytes"
-	"github.com/gy/gows/internal"
+	"github.com/gy/gosocket/internal"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"

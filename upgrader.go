@@ -2,7 +2,7 @@ package gows
 
 import (
 	"bufio"
-	"github.com/gy/gows/internal"
+	"github.com/gy/gosocket/internal"
 	"net"
 	"net/http"
 )
