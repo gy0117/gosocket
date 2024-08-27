@@ -1,4 +1,4 @@
-package gows
+package gosocket
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ func (wsConn *WsConn) readMessage() error {
 	if !opcode.IsDataFrame() {
 		return wsConn.readControlFrame()
 	}
-
+	return nil
 }
 
 // 读取控制帧

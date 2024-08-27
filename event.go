@@ -1,4 +1,4 @@
-package gows
+package gosocket
 
 type Message struct {
 }
