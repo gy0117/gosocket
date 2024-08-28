@@ -75,4 +75,7 @@ const (
 	ErrTlsHandshake ErrCode = 1015
 )
 
-var ErrHandShake = errors.New("handshake failed")
+var (
+	ErrHandShake  = errors.New("handshake failed")
+	ErrTextEncode = errors.New("invalid text encode, must be utf-8 encode")
+)

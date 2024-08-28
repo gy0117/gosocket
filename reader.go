@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gy/gosocket/internal"
 	"io"
+	"unsafe"
 )
 
 func (wsConn *WsConn) readMessage() error {
@@ -12,6 +13,7 @@ func (wsConn *WsConn) readMessage() error {
 	if err != nil {
 		return err
 	}
+	// 每一帧
 	if payloadLen > wsConn.config.MaxReadPayloadSize {
 		return internal.ErrCloseTooLarge
 	}
@@ -30,7 +32,59 @@ func (wsConn *WsConn) readMessage() error {
 	if !opcode.IsDataFrame() {
 		return wsConn.readControlFrame()
 	}
-	return nil
+
+	// @0xAAC 亮点，使用缓冲池
+	buf := bufferPool.Get(payloadLen)
+	payloadBytes := buf.Bytes()[:payloadLen]
+
+	// 读取payload
+	if _, err = io.ReadFull(wsConn.bufReader, payloadBytes); err != nil {
+		return err
+	}
+
+	if wsConn.frame.GetMask() {
+		UnMaskPayload(payloadBytes, wsConn.frame.GetMaskingKey())
+	}
+
+	fin := wsConn.frame.GetFIN()
+	// 消息只有1帧，如果是分片消息的最后片段，那么opcode是延续帧
+	if fin == 1 && opcode != OpcodeContinuationFrame {
+		// 将payloadBytes赋值给buf内存区域
+		*(*[]byte)(unsafe.Pointer(buf)) = payloadBytes
+
+		msg := &Message{
+			Opcode:  opcode,
+			Content: buf,
+		}
+		return wsConn.handleMessageEvent(msg)
+	}
+
+	// 处理分片消息
+	if isFirstFrame(fin, opcode) {
+		// 这个表示是第一帧
+		wsConn.frame.InitContinuationFrame(opcode, payloadLen)
+	}
+	if !wsConn.frame.HasInitContinuationFrame() {
+		return internal.ErrCloseProtocol
+	}
+
+	// 写入帧
+	wsConn.frame.Write(payloadBytes)
+	// 消息的内容
+	if wsConn.frame.GetContinuationBufLength() > wsConn.config.MaxReadPayloadSize {
+		return internal.ErrCloseTooLarge
+	}
+	// 消息还没读完，继续下一帧
+	if fin == 0 {
+		return nil
+	}
+	// 消息已经读完
+	msg := &Message{
+		Opcode:  wsConn.frame.Continuation.opcode, // 分片消息，需要取第一帧的opcode
+		Content: wsConn.frame.Continuation.buf,
+	}
+	wsConn.frame.ResetContinuation()
+	return wsConn.handleMessageEvent(msg)
 }
 
 // 读取控制帧
@@ -63,7 +117,7 @@ func (wsConn *WsConn) readControlFrame() error {
 	} else if opcode == OpcodePongFrame {
 		wsConn.eventHandler.OnPong(wsConn, payload)
 	} else if opcode == OpcodeConnectionCloseFrame {
-		return wsConn.handleClose(bytes.NewBuffer(payload))
+		return wsConn.handleCloseEvent(bytes.NewBuffer(payload))
 	} else {
 		return internal.NewXError(internal.ErrCloseProtocol, fmt.Errorf("unsupported opcode %d", opcode))
 	}
@@ -83,4 +137,9 @@ func (wsConn *WsConn) checkMask() error {
 		return internal.ErrCloseProtocol
 	}
 	return nil
+}
+
+// 分片消息，是否是第一帧
+func isFirstFrame(fin int, opcode Opcode) bool {
+	return fin == 0 && opcode != OpcodeContinuationFrame
 }

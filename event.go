@@ -1,6 +1,24 @@
 package gosocket
 
+import (
+	"bytes"
+	"unicode/utf8"
+)
+
 type Message struct {
+	// 消息的操作码
+	Opcode Opcode
+	// 消息内容
+	Content *bytes.Buffer
+}
+
+// IsValidText 如果opcode为0x1，则payload必须时utf-b编码的文本数据（规定）
+func (m *Message) IsValidText() bool {
+	// 连接关闭帧也可能包含可选payload，这个payload中可以包含关闭原因
+	if m.Opcode == OpcodeTextFrame || m.Opcode == OpcodeConnectionCloseFrame {
+		return utf8.Valid(m.Content.Bytes())
+	}
+	return true
 }
 
 type EventHandler interface {

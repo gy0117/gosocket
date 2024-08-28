@@ -2,8 +2,11 @@ package gosocket
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
+	"github.com/gy/gosocket/internal"
 	"io"
+	"math"
 )
 
 // Opcode RFC 6455
@@ -100,8 +103,52 @@ const (
 	maxControlFramePayloadLen = 125
 )
 
+// 延续帧
+type continuationFrame struct {
+	// 是否已经初始化
+	hasInit bool
+	opcode  Opcode
+	buf     *bytes.Buffer
+}
+
 type Frame struct {
-	Header [headerFrameLen]byte
+	Header       [headerFrameLen]byte
+	Continuation continuationFrame
+}
+
+func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int) {
+	if fin {
+		f.Header[0] |= 0x80
+	}
+	f.Header[0] |= byte(opcode) & 0x0F
+
+	// mask payload len
+	if mask {
+		f.Header[1] |= 0x80
+	}
+	headerLen := 2
+	switch {
+	case payloadLen <= 125:
+		f.Header[1] |= byte(payloadLen)
+
+	case payloadLen <= math.MaxUint16:
+		f.Header[1] |= 126
+		binary.BigEndian.PutUint16(f.Header[2:4], uint16(payloadLen))
+		headerLen += 2
+
+	default:
+		f.Header[1] |= 127
+		binary.BigEndian.PutUint64(f.Header[2:10], uint64(payloadLen))
+		headerLen += 8
+	}
+
+	// 如果需要掩码，则添加掩码键。客户端在发送数据时会随机生成，服务端处理时不需要对数据进行掩码，因为一般为空
+	if mask {
+		maskingKey, _ := internal.GenerateMaskingKey()
+		f.Header[1] |= 128
+		binary.LittleEndian.PutUint32(f.Header[headerLen:headerLen+4], binary.LittleEndian.Uint32(maskingKey))
+		headerLen += 4
+	}
 }
 
 // ParseHeader 解析帧头，获取payload len
@@ -178,4 +225,28 @@ func (f *Frame) GetPayloadLen() int {
 
 func (f *Frame) GetMaskingKey() []byte {
 	return f.Header[10:14]
+}
+
+func (f *Frame) InitContinuationFrame(opcode Opcode, payloadLen int) {
+	f.Continuation.hasInit = true
+	f.Continuation.opcode = opcode
+	f.Continuation.buf = bytes.NewBuffer(make([]byte, 0, payloadLen))
+}
+
+func (f *Frame) HasInitContinuationFrame() bool {
+	return f.Continuation.hasInit
+}
+
+func (f *Frame) Write(payloadBytes []byte) {
+	f.Continuation.buf.Write(payloadBytes)
+}
+
+func (f *Frame) GetContinuationBufLength() int {
+	return f.Continuation.buf.Len()
+}
+
+func (f *Frame) ResetContinuation() {
+	f.Continuation.hasInit = false
+	f.Continuation.opcode = 0
+	f.Continuation.buf = nil
 }
