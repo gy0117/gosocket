@@ -8,5 +8,5 @@ var defaultServerOptions = &ServerOptions{}
 
 // ServerOptions server configurations
 type ServerOptions struct {
-	bufReaderPool *Pool[*bufio.Reader]
+	BufReaderPool *Pool[*bufio.Reader]
 }

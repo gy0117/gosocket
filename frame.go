@@ -7,6 +7,7 @@ import (
 	"github.com/gy/gosocket/internal"
 	"io"
 	"math"
+	"unicode/utf8"
 )
 
 // Opcode RFC 6455
@@ -116,7 +117,18 @@ type Frame struct {
 	Continuation continuationFrame
 }
 
-func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int) {
+// CreateFrame 创建帧数据，帧头 + payload数据
+//func (f *Frame) CreateFrame(opcode Opcode, payload []byte) (*bytes.Buffer, error) {
+//	//if openUTF8Check && !isValidText(opcode, payload) {
+//	//	return nil, internal.NewXError(internal.ErrCloseUnSupported, internal.ErrTextEncode)
+//	//}
+//	n := len(payload)
+//	buf := bufferPool.Get(headerFrameLen + n)
+//	header := &Frame{}
+//
+//}
+
+func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int) (headerLen int, maskingKey []byte) {
 	if fin {
 		f.Header[0] |= 0x80
 	}
@@ -126,7 +138,7 @@ func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int)
 	if mask {
 		f.Header[1] |= 0x80
 	}
-	headerLen := 2
+	headerLen = 2
 	switch {
 	case payloadLen <= 125:
 		f.Header[1] |= byte(payloadLen)
@@ -144,11 +156,12 @@ func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int)
 
 	// 如果需要掩码，则添加掩码键。客户端在发送数据时会随机生成，服务端处理时不需要对数据进行掩码，因为一般为空
 	if mask {
-		maskingKey, _ := internal.GenerateMaskingKey()
+		maskingKey, _ = internal.GenerateMaskingKey()
 		f.Header[1] |= 128
 		binary.LittleEndian.PutUint32(f.Header[headerLen:headerLen+4], binary.LittleEndian.Uint32(maskingKey))
 		headerLen += 4
 	}
+	return
 }
 
 // ParseHeader 解析帧头，获取payload len
@@ -249,4 +262,12 @@ func (f *Frame) ResetContinuation() {
 	f.Continuation.hasInit = false
 	f.Continuation.opcode = 0
 	f.Continuation.buf = nil
+}
+
+func isValidText(opcode Opcode, data []byte) bool {
+	// 连接关闭帧也可能包含可选payload，这个payload中可以包含关闭原因
+	if opcode == OpcodeTextFrame || opcode == OpcodeConnectionCloseFrame {
+		return utf8.Valid(data)
+	}
+	return true
 }

@@ -129,11 +129,11 @@ func (wsConn *WsConn) readControlFrame() error {
 func (wsConn *WsConn) checkMask() error {
 	maskEnable := wsConn.frame.GetMask()
 	// 服务器不掩码，即mask位必须为0
-	if wsConn.isServer && maskEnable {
+	if wsConn.server && maskEnable {
 		return internal.ErrCloseProtocol
 	}
 	// 客户端必须掩码，即mask位必须为1
-	if !wsConn.isServer && !maskEnable {
+	if !wsConn.server && !maskEnable {
 		return internal.ErrCloseProtocol
 	}
 	return nil

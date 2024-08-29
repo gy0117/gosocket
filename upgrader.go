@@ -8,12 +8,14 @@ import (
 )
 
 type Upgrade struct {
-	options *ServerOptions
+	options      *ServerOptions
+	eventHandler EventHandler
 }
 
-func NewUpgrade(options *ServerOptions) *Upgrade {
+func NewUpgrade(eventHandler EventHandler, options *ServerOptions) *Upgrade {
 	return &Upgrade{
-		options: options,
+		eventHandler: eventHandler,
+		options:      options,
 	}
 }
 
@@ -31,7 +33,7 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request) (*WsConn
 		return nil, err
 	}
 	// 维护缓冲区池子，不使用hijack返回的reader
-	reader := up.options.bufReaderPool.Get()
+	reader := up.options.BufReaderPool.Get()
 	reader.Reset(netConn)
 
 	// 2. 升级成websocket
@@ -41,8 +43,9 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request) (*WsConn
 	}
 	// 2.2 构造
 	wsConn := &WsConn{
-		conn:      netConn,
-		bufReader: reader,
+		conn:         netConn,
+		bufReader:    reader,
+		eventHandler: up.eventHandler,
 	}
 	return wsConn, nil
 }

@@ -5,11 +5,14 @@ import (
 	"bytes"
 	"github.com/gy/gosocket/internal"
 	"net"
+	"sync"
 )
 
 type Config struct {
-	// 读取消息的最大长度
+	// 最大的读取消息长度
 	MaxReadPayloadSize int
+	// 最大的写入消息长度
+	MaxWritePayloadSize int
 	// 是否打开utf-8编码检查
 	OpenUTF8Check bool
 }
@@ -22,7 +25,8 @@ type WsConn struct {
 	frame        *Frame
 	config       *Config
 	// 标识是否为服务端
-	isServer bool
+	server bool
+	lock   sync.Mutex
 }
 
 // ReadLoop 循环读消息
@@ -45,6 +49,7 @@ func (wsConn *WsConn) handleCloseEvent(buf *bytes.Buffer) error {
 	return nil
 }
 
+// TODO
 func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 	if wsConn.config.OpenUTF8Check && !msg.IsValidText() {
 		return internal.NewXError(internal.ErrCloseUnSupported, internal.ErrTextEncode)
@@ -53,4 +58,9 @@ func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 
 	wsConn.eventHandler.OnMessage(wsConn, msg)
 	return nil
+}
+
+// TODO
+func (wsConn *WsConn) handleErrorEvent(err error) {
+
 }
