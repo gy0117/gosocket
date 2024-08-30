@@ -45,11 +45,7 @@ func (h *httpWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func TestHijack(t *testing.T) {
-	var upgrade = NewUpgrade(&ServerOptions{
-		BufReaderPool: NewPool(func() *bufio.Reader {
-			return bufio.NewReaderSize(nil, 1024)
-		}),
-	})
+	var upgrade = NewUpgrade(nil, &ServerOptions{})
 	h := http.Header{}
 	h.Set("Connection", "Upgrade")
 	h.Set("Upgrade", "websocket")
