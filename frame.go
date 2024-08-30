@@ -114,7 +114,13 @@ type continuationFrame struct {
 
 type Frame struct {
 	Header       [headerFrameLen]byte
-	Continuation continuationFrame
+	Continuation *continuationFrame
+}
+
+func NewFrame() *Frame {
+	return &Frame{
+		Continuation: &continuationFrame{},
+	}
 }
 
 // CreateFrame 创建帧数据，帧头 + payload数据
@@ -228,6 +234,7 @@ func (f *Frame) GetOpcode() Opcode {
 	return Opcode(f.Header[0] & 0x0F)
 }
 
+// GetFIN 128 或 0，使用 fin != 0 进行判断
 func (f *Frame) GetFIN() int {
 	return int(f.Header[0] & 0x80)
 }

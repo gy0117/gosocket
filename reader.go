@@ -48,7 +48,7 @@ func (wsConn *WsConn) readMessage() error {
 
 	fin := wsConn.frame.GetFIN()
 	// 消息只有1帧，如果是分片消息的最后片段，那么opcode是延续帧
-	if fin == 1 && opcode != OpcodeContinuationFrame {
+	if fin != 0 && opcode != OpcodeContinuationFrame {
 		// 将payloadBytes赋值给buf内存区域
 		*(*[]byte)(unsafe.Pointer(buf)) = payloadBytes
 
