@@ -125,17 +125,26 @@ func (wsConn *WsConn) readControlFrame() error {
 }
 
 // 检查掩码设置是否符合 RFC6455 协议
-// TODO 确认下
+// RFC6455：所有从客户端发送到服务端的帧都必须设置掩码位，mask为1
+// 这个方法是读消息时触发的，因此如果是服务端，mask为0，就是协议错误
+// 如果是客户端，接收到的消息，是服务端发送的，mask为0，如果mask为1，就是协议错误
 func (wsConn *WsConn) checkMask() error {
 	maskEnable := wsConn.frame.GetMask()
-	// 服务器不掩码，即mask位必须为0
-	if wsConn.server && maskEnable {
+	if wsConn.server && !maskEnable {
 		return internal.ErrCloseProtocol
 	}
-	// 客户端必须掩码，即mask位必须为1
-	if !wsConn.server && !maskEnable {
+	if !wsConn.server && maskEnable {
 		return internal.ErrCloseProtocol
 	}
+	//
+	//// 服务器不掩码，即mask位必须为0
+	//if wsConn.server && maskEnable {
+	//	return internal.ErrCloseProtocol
+	//}
+	//// 客户端必须掩码，即mask位必须为1
+	//if !wsConn.server && !maskEnable {
+	//	return internal.ErrCloseProtocol
+	//}
 	return nil
 }
 

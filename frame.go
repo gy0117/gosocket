@@ -134,16 +134,12 @@ func NewFrame() *Frame {
 //
 //}
 
-func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int) (headerLen int, maskingKey []byte) {
+func (f *Frame) CreateHeader(fin bool, opcode Opcode, server bool, payloadLen int) (headerLen int, maskingKey []byte) {
 	if fin {
 		f.Header[0] |= 0x80
 	}
 	f.Header[0] |= byte(opcode) & 0x0F
 
-	// mask payload len
-	if mask {
-		f.Header[1] |= 0x80
-	}
 	headerLen = 2
 	switch {
 	case payloadLen <= 125:
@@ -161,7 +157,7 @@ func (f *Frame) CreateHeader(fin bool, opcode Opcode, mask bool, payloadLen int)
 	}
 
 	// 如果需要掩码，则添加掩码键。客户端在发送数据时会随机生成，服务端处理时不需要对数据进行掩码，因为一般为空
-	if mask {
+	if !server {
 		maskingKey, _ = internal.GenerateMaskingKey()
 		f.Header[1] |= 128
 		binary.LittleEndian.PutUint32(f.Header[headerLen:headerLen+4], binary.LittleEndian.Uint32(maskingKey))
