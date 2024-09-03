@@ -21,10 +21,9 @@ type Upgrade struct {
 }
 
 func NewUpgrade(eventHandler EventHandler, options *ServerOptions) *Upgrade {
-	initServerOptions(options)
 	return &Upgrade{
 		eventHandler: eventHandler,
-		options:      options,
+		options:      initServerOptions(options),
 	}
 }
 
@@ -117,7 +116,7 @@ func checkHeader(r *http.Request) error {
 	return nil
 }
 
-func initServerOptions(options *ServerOptions) {
+func initServerOptions(options *ServerOptions) *ServerOptions {
 	if options == nil {
 		options = new(ServerOptions)
 	}
@@ -145,4 +144,5 @@ func initServerOptions(options *ServerOptions) {
 	options.readerBufPool = pool.NewPool(func() *bufio.Reader {
 		return bufio.NewReaderSize(nil, options.ReaderBufSize)
 	})
+	return options
 }

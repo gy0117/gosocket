@@ -7,8 +7,8 @@ import (
 
 func TestConnRecycle(t *testing.T) {
 	server, _ := net.Pipe()
-	options := new(ServerOptions)
-	initServerOptions(options)
+	options := initServerOptions(nil)
+
 	wsConn := &WsConn{
 		conn:      server,
 		bufReader: options.readerBufPool.Get(),
