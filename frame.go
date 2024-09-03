@@ -2,8 +2,12 @@ package gosocket
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
+	"github.com/gy/gosocket/internal/tools"
 	"io"
+	"math"
+	"unicode/utf8"
 )
 
 // Opcode RFC 6455
@@ -100,8 +104,66 @@ const (
 	maxControlFramePayloadLen = 125
 )
 
+// 延续帧
+type continuationFrame struct {
+	// 是否已经初始化
+	hasInit bool
+	opcode  Opcode
+	buf     *bytes.Buffer
+}
+
 type Frame struct {
-	Header [headerFrameLen]byte
+	Header       [headerFrameLen]byte
+	Continuation *continuationFrame
+}
+
+func NewFrame() *Frame {
+	return &Frame{
+		Continuation: &continuationFrame{},
+	}
+}
+
+// CreateFrame 创建帧数据，帧头 + payload数据
+//func (f *Frame) CreateFrame(opcode Opcode, payload []byte) (*bytes.Buffer, error) {
+//	//if openUTF8Check && !isValidText(opcode, payload) {
+//	//	return nil, internal.NewXError(internal.ErrCloseUnSupported, internal.ErrTextEncode)
+//	//}
+//	n := len(payload)
+//	buf := bufferPool.Get(headerFrameLen + n)
+//	header := &Frame{}
+//
+//}
+
+func (f *Frame) CreateHeader(fin bool, opcode Opcode, server bool, payloadLen int) (headerLen int, maskingKey []byte) {
+	if fin {
+		f.Header[0] |= 0x80
+	}
+	f.Header[0] |= byte(opcode) & 0x0F
+
+	headerLen = 2
+	switch {
+	case payloadLen <= 125:
+		f.Header[1] |= byte(payloadLen)
+
+	case payloadLen <= math.MaxUint16:
+		f.Header[1] |= 126
+		binary.BigEndian.PutUint16(f.Header[2:4], uint16(payloadLen))
+		headerLen += 2
+
+	default:
+		f.Header[1] |= 127
+		binary.BigEndian.PutUint64(f.Header[2:10], uint64(payloadLen))
+		headerLen += 8
+	}
+
+	// 如果需要掩码，则添加掩码键。客户端在发送数据时会随机生成，服务端处理时不需要对数据进行掩码，因为一般为空
+	if !server {
+		maskingKey, _ = tools.GenerateMaskingKey()
+		f.Header[1] |= 128
+		binary.LittleEndian.PutUint32(f.Header[headerLen:headerLen+4], binary.LittleEndian.Uint32(maskingKey))
+		headerLen += 4
+	}
+	return
 }
 
 // ParseHeader 解析帧头，获取payload len
@@ -168,6 +230,7 @@ func (f *Frame) GetOpcode() Opcode {
 	return Opcode(f.Header[0] & 0x0F)
 }
 
+// GetFIN 128 或 0，使用 fin != 0 进行判断
 func (f *Frame) GetFIN() int {
 	return int(f.Header[0] & 0x80)
 }
@@ -178,4 +241,36 @@ func (f *Frame) GetPayloadLen() int {
 
 func (f *Frame) GetMaskingKey() []byte {
 	return f.Header[10:14]
+}
+
+func (f *Frame) InitContinuationFrame(opcode Opcode, payloadLen int) {
+	f.Continuation.hasInit = true
+	f.Continuation.opcode = opcode
+	f.Continuation.buf = bytes.NewBuffer(make([]byte, 0, payloadLen))
+}
+
+func (f *Frame) HasInitContinuationFrame() bool {
+	return f.Continuation.hasInit
+}
+
+func (f *Frame) Write(payloadBytes []byte) {
+	f.Continuation.buf.Write(payloadBytes)
+}
+
+func (f *Frame) GetContinuationBufLength() int {
+	return f.Continuation.buf.Len()
+}
+
+func (f *Frame) ResetContinuation() {
+	f.Continuation.hasInit = false
+	f.Continuation.opcode = 0
+	f.Continuation.buf = nil
+}
+
+func isValidText(opcode Opcode, data []byte) bool {
+	// 连接关闭帧也可能包含可选payload，这个payload中可以包含关闭原因
+	if opcode == OpcodeTextFrame || opcode == OpcodeConnectionCloseFrame {
+		return utf8.Valid(data)
+	}
+	return true
 }

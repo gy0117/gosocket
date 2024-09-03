@@ -3,7 +3,6 @@ package gosocket
 import (
 	"bufio"
 	"bytes"
-	"github.com/gy/gosocket/internal"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"
@@ -46,11 +45,7 @@ func (h *httpWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 func TestHijack(t *testing.T) {
-	var upgrade = NewUpgrade(&ServerOptions{
-		bufReaderPool: internal.NewPool(func() *bufio.Reader {
-			return bufio.NewReaderSize(nil, 1024)
-		}),
-	})
+	var upgrade = NewUpgrade(nil, &ServerOptions{})
 	h := http.Header{}
 	h.Set("Connection", "Upgrade")
 	h.Set("Upgrade", "websocket")

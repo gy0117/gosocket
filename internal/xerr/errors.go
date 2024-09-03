@@ -1,37 +1,39 @@
-package internal
+package xerr
 
-import "errors"
-
-var _ error = (*ErrCode)(nil)
-
-var errMap = map[ErrCode]string{
-	ErrInternalServer: "internal server error",
-}
+//var _ error = (*ErrCode)(nil)
+//
+//var errMap = map[ErrCode]string{
+//	ErrInternalServer: "internal server error",
+//}
 
 // ErrCode https://developer.mozilla.org/zh-CN/docs/Web/API/CloseEvent
 type ErrCode uint16
 
-func (e ErrCode) Error() string {
-	return errMap[e]
-}
+//func (e ErrCode) Error() string {
+//	return errMap[e]
+//}
 
-type XError struct {
+type Error struct {
 	ECode ErrCode
 	Err   error
 }
 
-func NewXError(eCode ErrCode, err error) *XError {
-	return &XError{
+func NewError(eCode ErrCode, err error) *Error {
+	return &Error{
 		ECode: eCode,
 		Err:   err,
 	}
 }
 
-func (e *XError) Error() string {
-	return e.Err.Error()
+func (e *Error) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+	return ""
 }
 
 const (
+
 	// CloseNormal 正常关闭; 无论为何目的而创建，该链接都已成功完成任务
 	CloseNormal ErrCode = 1000
 
@@ -44,7 +46,7 @@ const (
 	// ErrCloseUnSupported 由于接收到不允许的数据类型而断开连接 (如仅接收文本数据的终端接收到了二进制数据)
 	ErrCloseUnSupported ErrCode = 1003
 
-	// ErrCloseNoStatus 表示没有收到预期的状态码
+	// ErrCloseNoStatus 没有收到预期的状态码
 	ErrCloseNoStatus ErrCode = 1005
 
 	// ErrCloseAbNormal 用于期望收到状态码时连接非正常关闭 (也就是说，没有发送关闭帧)
@@ -75,4 +77,7 @@ const (
 	ErrTlsHandshake ErrCode = 1015
 )
 
-var ErrHandShake = errors.New("handshake failed")
+// WebSocket 协议允许应用程序定义 4000–4999 范围内的状态码
+const (
+	ErrHandShake ErrCode = 4001
+)
