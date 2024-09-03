@@ -8,15 +8,6 @@ import (
 	"sync"
 )
 
-type Config struct {
-	// 最大的读取消息长度
-	MaxReadPayloadSize int
-	// 最大的写入消息长度
-	MaxWritePayloadSize int
-	// 是否打开utf-8编码检查
-	OpenUTF8Check bool
-}
-
 // WsConn websocket connection
 type WsConn struct {
 	conn         net.Conn
@@ -27,6 +18,7 @@ type WsConn struct {
 	// 标识是否为服务端
 	server bool
 	lock   sync.Mutex
+	sm     SessionManager // 当前连接 管理k-v值的
 }
 
 // ReadLoop 循环读消息
@@ -63,4 +55,8 @@ func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 // TODO
 func (wsConn *WsConn) handleErrorEvent(err error) {
 
+}
+
+func (wsConn *WsConn) GetSessionMap() SessionManager {
+	return wsConn.sm
 }
