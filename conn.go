@@ -26,19 +26,23 @@ type WsConn struct {
 	sm SessionManager
 	// 连接是否关闭，0 未关闭，1 关闭
 	isClose int32
+	Recycle func()
 }
 
 // ReadLoop 循环读消息
 func (wsConn *WsConn) ReadLoop() {
 	wsConn.eventHandler.OnStart(wsConn)
-
+	var err error
 	for {
-		err := wsConn.readMessage()
+		err = wsConn.readMessage()
 		if err != nil {
 			break
 		}
 	}
-	// TODO 处理错误
+	wsConn.eventHandler.OnStop(wsConn, err)
+	if wsConn.server {
+		wsConn.Recycle()
+	}
 }
 
 func (wsConn *WsConn) GetSessionMap() SessionManager {
@@ -58,7 +62,6 @@ func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 		return xerr.NewError(xerr.ErrCloseUnSupported, errors.New("invalid text encode, must be utf-8 encode"))
 	}
 	// TODO 消息并行处理
-
 	wsConn.eventHandler.OnMessage(wsConn, msg)
 	return nil
 }

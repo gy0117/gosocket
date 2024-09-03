@@ -80,6 +80,12 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 		sm:           sm,
 		server:       true,
 	}
+
+	wsConn.Recycle = func() {
+		wsConn.bufReader.Reset(nil)
+		up.options.readerBufPool.Put(wsConn.bufReader)
+		wsConn.bufReader = nil
+	}
 	return wsConn, nil
 }
 
