@@ -2,12 +2,15 @@ package gosocket
 
 import (
 	"bytes"
-	"github.com/gy/gosocket/internal"
+	"errors"
+	"github.com/gy/gosocket/internal/xerr"
 )
 
 func (wsConn *WsConn) WriteMessage(opcode Opcode, payload []byte) error {
 	err := wsConn.writeMessage(opcode, payload)
-	wsConn.handleErrorEvent(err)
+	if err != nil {
+		wsConn.handleErrorEvent(err)
+	}
 	return err
 }
 
@@ -25,13 +28,15 @@ func (wsConn *WsConn) WritePong(payload []byte) error {
 
 func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
 	// TODO 状态检查
+	wsConn.lock.Lock()
+	defer wsConn.lock.Unlock()
 
 	n := len(payload)
 	if n > wsConn.config.MaxWritePayloadSize {
-		return internal.ErrCloseTooLarge
+		return xerr.NewError(xerr.ErrCloseTooLarge, errors.New("payload size more than MaxWritePayloadSize"))
 	}
 	if wsConn.config.OpenUTF8Check && !isValidText(opcode, payload) {
-		return internal.NewXError(internal.ErrCloseUnSupported, internal.ErrTextEncode)
+		return xerr.NewError(xerr.ErrCloseUnSupported, errors.New("invalid text encode, must be utf-8 encode"))
 	}
 	frame, err := wsConn.createFrame(opcode, payload)
 	if err != nil {
@@ -49,11 +54,10 @@ func (wsConn *WsConn) createFrame(opcode Opcode, payload []byte) (*bytes.Buffer,
 	n := len(payload)
 	buf := bufferPool.Get(headerFrameLen + n)
 	f := &Frame{}
-	headerLen, maskingKey := f.CreateHeader(true, opcode, !wsConn.server, n)
+	headerLen, maskingKey := f.CreateHeader(true, opcode, wsConn.server, n)
 
 	buf.Write(f.Header[:headerLen])
 	if !wsConn.server {
-		// 客户端需要 掩码
 		UnMaskPayload(payload, maskingKey)
 	}
 	buf.Write(payload)

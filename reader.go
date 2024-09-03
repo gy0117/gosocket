@@ -2,8 +2,9 @@ package gosocket
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"github.com/gy/gosocket/internal"
+	"github.com/gy/gosocket/internal/xerr"
 	"io"
 	"unsafe"
 )
@@ -15,13 +16,13 @@ func (wsConn *WsConn) readMessage() error {
 	}
 	// 每一帧
 	if payloadLen > wsConn.config.MaxReadPayloadSize {
-		return internal.ErrCloseTooLarge
+		return xerr.NewError(xerr.ErrCloseTooLarge, errors.New("frame is too large"))
 	}
 
 	// 在大多数情况下，WebSocket 帧的 RSV1、RSV2、RSV3 位的值都是 0，除非使用了特定的 WebSocket 扩展功能，这些位才可能被设置为 1。
 	// TODO 暂时不考虑压缩扩展
 	if wsConn.frame.GetRSV1() || wsConn.frame.GetRSV2() || wsConn.frame.GetRSV3() {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, nil)
 	}
 
 	if err := wsConn.checkMask(); err != nil {
@@ -65,14 +66,14 @@ func (wsConn *WsConn) readMessage() error {
 		wsConn.frame.InitContinuationFrame(opcode, payloadLen)
 	}
 	if !wsConn.frame.HasInitContinuationFrame() {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("continuation frame has init"))
 	}
 
 	// 写入帧
 	wsConn.frame.Write(payloadBytes)
 	// 消息的内容
 	if wsConn.frame.GetContinuationBufLength() > wsConn.config.MaxReadPayloadSize {
-		return internal.ErrCloseTooLarge
+		return xerr.NewError(xerr.ErrCloseTooLarge, errors.New("payload size more than MaxReadPayloadSize"))
 	}
 	// 消息还没读完，继续下一帧
 	if fin == 0 {
@@ -91,12 +92,12 @@ func (wsConn *WsConn) readMessage() error {
 func (wsConn *WsConn) readControlFrame() error {
 	// RFC 6455 控制帧不可以分片
 	if wsConn.frame.GetFIN() == 0 {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("read control frame, fin is zero"))
 	}
 	payloadLen := wsConn.frame.GetPayloadLen()
 	// RFC 6455 控制帧的负载长度不得超过 125 字节
 	if payloadLen > maxControlFramePayloadLen {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("read control frame, payload size more than maxControlFramePayloadLen"))
 	}
 
 	// 控制帧的负载数据长度通常很短，因此可以直接读取并处理，这里不用buffer
@@ -119,7 +120,7 @@ func (wsConn *WsConn) readControlFrame() error {
 	} else if opcode == OpcodeConnectionCloseFrame {
 		return wsConn.handleCloseEvent(bytes.NewBuffer(payload))
 	} else {
-		return internal.NewXError(internal.ErrCloseProtocol, fmt.Errorf("unsupported opcode %d", opcode))
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New(fmt.Sprintf("unsupported opcode %d", opcode)))
 	}
 	return nil
 }
@@ -131,10 +132,10 @@ func (wsConn *WsConn) readControlFrame() error {
 func (wsConn *WsConn) checkMask() error {
 	maskEnable := wsConn.frame.GetMask()
 	if wsConn.server && !maskEnable {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("mask check failed"))
 	}
 	if !wsConn.server && maskEnable {
-		return internal.ErrCloseProtocol
+		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("mask check failed"))
 	}
 	//
 	//// 服务器不掩码，即mask位必须为0

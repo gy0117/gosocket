@@ -2,7 +2,9 @@ package gosocket
 
 import (
 	"bufio"
+	"errors"
 	"github.com/gy/gosocket/internal"
+	"github.com/gy/gosocket/internal/xerr"
 	"net"
 	"net/http"
 )
@@ -55,7 +57,7 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 	// 2.2 return response
 	websocketKey := r.Header.Get(internal.SecWebSocketKeyPair.Key)
 	if len(websocketKey) == 0 {
-		return nil, internal.ErrHandShake
+		return nil, xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, websocketKey is nil"))
 	}
 	respWriter := NewResponseWriter()
 	defer respWriter.Close()
@@ -73,6 +75,7 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 		frame:        NewFrame(),
 		config:       up.options.CreateConfig(),
 		sm:           sm,
+		server:       true,
 	}
 	return wsConn, nil
 }
@@ -80,7 +83,7 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 func (up *Upgrade) hijack(w http.ResponseWriter) (net.Conn, *bufio.Reader, error) {
 	hi, ok := w.(http.Hijacker)
 	if !ok {
-		return nil, nil, internal.ErrInternalServer
+		return nil, nil, xerr.NewError(xerr.ErrInternalServer, errors.New("hijacker failed"))
 	}
 	netConn, rw, err := hi.Hijack()
 	if err != nil {
@@ -91,16 +94,16 @@ func (up *Upgrade) hijack(w http.ResponseWriter) (net.Conn, *bufio.Reader, error
 
 func checkHeader(r *http.Request) error {
 	if r.Method != http.MethodGet {
-		return internal.ErrHandShake
+		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, method is not GET"))
 	}
 	if r.Header.Get(internal.ConnectionPair.Key) != internal.ConnectionPair.Value {
-		return internal.ErrHandShake
+		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header connection error"))
 	}
 	if r.Header.Get(internal.UpgradePair.Key) != internal.UpgradePair.Value {
-		return internal.ErrHandShake
+		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header upgrade error"))
 	}
 	if r.Header.Get(internal.SecWebSocketVersionPair.Key) != internal.SecWebSocketVersionPair.Value {
-		return internal.ErrHandShake
+		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header Sec-WebSocket-Version error"))
 	}
 	return nil
 }
