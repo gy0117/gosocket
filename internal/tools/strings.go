@@ -1,4 +1,4 @@
-package gosocket
+package tools
 
 import (
 	"reflect"

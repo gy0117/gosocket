@@ -10,4 +10,5 @@ var (
 	UpgradePair             = Pair{"Upgrade", "websocket"}
 	SecWebSocketVersionPair = Pair{"Sec-WebSocket-Version", "13"}
 	SecWebSocketKeyPair     = Pair{"Sec-WebSocket-Key", ""}
+	SecWebSocketAcceptPair  = Pair{"Sec-WebSocket-Accept", ""}
 )

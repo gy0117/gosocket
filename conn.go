@@ -25,7 +25,7 @@ type WsConn struct {
 	// 当前连接 管理k-v值的
 	sm SessionManager
 	// 连接是否关闭，0 未关闭，1 关闭
-	isClose uint32
+	isClose int32
 }
 
 // ReadLoop 循环读消息
@@ -46,13 +46,13 @@ func (wsConn *WsConn) GetSessionMap() SessionManager {
 }
 
 // 处理关闭事件
-// TODO
 func (wsConn *WsConn) handleCloseEvent(buf *bytes.Buffer) error {
-
-	return nil
+	if atomic.CompareAndSwapInt32(&wsConn.isClose, 0, 1) {
+		wsConn.close(buf.String())
+	}
+	return xerr.NewError(xerr.CloseNormal, nil)
 }
 
-// TODO
 func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 	if wsConn.config.OpenUTF8Check && !msg.IsValidText() {
 		return xerr.NewError(xerr.ErrCloseUnSupported, errors.New("invalid text encode, must be utf-8 encode"))
@@ -65,7 +65,7 @@ func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
 
 func (wsConn *WsConn) handleErrorEvent(err error) {
 	// 如果conn未关闭，处理error，然后关闭
-	if atomic.CompareAndSwapUint32(&wsConn.isClose, 0, 1) {
+	if atomic.CompareAndSwapInt32(&wsConn.isClose, 0, 1) {
 		ecode := xerr.CloseNormal
 		var respErr error
 		switch v := err.(type) {

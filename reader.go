@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gy/gosocket/internal/xerr"
+	"github.com/gy/gosocket/pkg/bufferpool"
 	"io"
 	"unsafe"
 )
@@ -35,7 +36,7 @@ func (wsConn *WsConn) readMessage() error {
 	}
 
 	// @0xAAC 亮点，使用缓冲池
-	buf := bufferPool.Get(payloadLen)
+	buf := bufferpool.Pools.Get(payloadLen)
 	payloadBytes := buf.Bytes()[:payloadLen]
 
 	// 读取payload

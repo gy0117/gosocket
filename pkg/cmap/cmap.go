@@ -1,7 +1,8 @@
-package internal
+package cmap
 
 import (
 	"github.com/dolthub/maphash"
+	"github.com/gy/gosocket/internal/tools"
 	"sync"
 )
 
@@ -19,14 +20,14 @@ type Segment[K comparable, V any] struct {
 
 const defaultSegmentNum = 32
 
-func New[K comparable, V any](segmentNum, segmentCap int) ConcurrentMap[K, V] {
+func New[K comparable, V any](segmentNum, segmentCap int) *ConcurrentMap[K, V] {
 	if segmentNum <= 0 {
 		segmentNum = defaultSegmentNum
 	}
 
-	segmentNum = CeilPow2(segmentNum)
+	segmentNum = tools.CeilPow2(segmentNum)
 
-	cmp := ConcurrentMap[K, V]{
+	cmp := &ConcurrentMap[K, V]{
 		segments:    make([]*Segment[K, V], segmentNum),
 		segmentSize: segmentNum,
 		mapHash:     maphash.NewHasher[K](),

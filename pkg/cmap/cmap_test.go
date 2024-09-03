@@ -1,4 +1,4 @@
-package internal
+package cmap
 
 import (
 	"github.com/stretchr/testify/assert"

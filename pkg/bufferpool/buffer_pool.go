@@ -1,4 +1,4 @@
-package gosocket
+package bufferpool
 
 import (
 	"bytes"
@@ -6,23 +6,23 @@ import (
 	"sync"
 )
 
-var bufferPool = new(BufferPool)
+var Pools = new(BufferPools)
 
 func init() {
-	bufferPool = NewBufferPool(64, 128*1024)
+	Pools = NewBufferPools(64, 128*1024)
 }
 
-// BufferPool 缓冲池，创建不同大小的缓冲池，并使用sync.Pool管理
-type BufferPool struct {
+// BufferPools 缓冲池，创建不同大小的缓冲池，并使用sync.Pool管理
+type BufferPools struct {
 	pools      map[int]*sync.Pool
 	start, end int
 }
 
-func NewBufferPool(start, end int) *BufferPool {
+func NewBufferPools(start, end int) *BufferPools {
 	start = nextPowerOfTwo(start)
 	end = nextPowerOfTwo(end)
 
-	bp := &BufferPool{
+	bp := &BufferPools{
 		pools: make(map[int]*sync.Pool),
 		start: start,
 		end:   end,
@@ -35,7 +35,7 @@ func NewBufferPool(start, end int) *BufferPool {
 	return bp
 }
 
-func (bp *BufferPool) Put(buf *bytes.Buffer) {
+func (bp *BufferPools) Put(buf *bytes.Buffer) {
 	if buf == nil {
 		return
 	}
@@ -44,7 +44,7 @@ func (bp *BufferPool) Put(buf *bytes.Buffer) {
 	}
 }
 
-func (bp *BufferPool) Get(n int) *bytes.Buffer {
+func (bp *BufferPools) Get(n int) *bytes.Buffer {
 	size := max(bp.start, nextPowerOfTwo(n))
 	if pool, ok := bp.pools[size]; ok {
 		buf := pool.Get().(*bytes.Buffer)

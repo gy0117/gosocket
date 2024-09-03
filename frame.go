@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"github.com/gy/gosocket/internal"
+	"github.com/gy/gosocket/internal/tools"
 	"io"
 	"math"
 	"unicode/utf8"
@@ -158,7 +158,7 @@ func (f *Frame) CreateHeader(fin bool, opcode Opcode, server bool, payloadLen in
 
 	// 如果需要掩码，则添加掩码键。客户端在发送数据时会随机生成，服务端处理时不需要对数据进行掩码，因为一般为空
 	if !server {
-		maskingKey, _ = internal.GenerateMaskingKey()
+		maskingKey, _ = tools.GenerateMaskingKey()
 		f.Header[1] |= 128
 		binary.LittleEndian.PutUint32(f.Header[headerLen:headerLen+4], binary.LittleEndian.Uint32(maskingKey))
 		headerLen += 4

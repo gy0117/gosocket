@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"errors"
 	"github.com/gy/gosocket/internal"
+	"github.com/gy/gosocket/internal/tools"
 	"github.com/gy/gosocket/internal/xerr"
+	"github.com/gy/gosocket/pkg/cmap"
+	"github.com/gy/gosocket/pkg/pool"
 	"net"
 	"net/http"
 )
@@ -62,7 +65,7 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 	respWriter := NewResponseWriter()
 	defer respWriter.Close()
 
-	respWriter.AddHeader(internal.SecWebSocketAcceptPair.Key, internal.GetSecWebSocketAccept(websocketKey))
+	respWriter.AddHeader(internal.SecWebSocketAcceptPair.Key, tools.GetSecWebSocketAccept(websocketKey))
 	if err = respWriter.Write(netConn); err != nil {
 		return nil, err
 	}
@@ -124,7 +127,7 @@ func initServerOptions(options *ServerOptions) {
 
 	if options.NewSessionMap == nil {
 		options.NewSessionMap = func() SessionManager {
-			return New[string, any](10, 128)
+			return cmap.New[string, any](10, 128)
 		}
 	}
 	if options.PreSessionHandle == nil {
@@ -133,7 +136,7 @@ func initServerOptions(options *ServerOptions) {
 		}
 	}
 
-	options.readerBufPool = NewPool(func() *bufio.Reader {
+	options.readerBufPool = pool.NewPool(func() *bufio.Reader {
 		return bufio.NewReaderSize(nil, options.ReaderBufSize)
 	})
 }

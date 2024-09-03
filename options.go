@@ -2,6 +2,7 @@ package gosocket
 
 import (
 	"bufio"
+	"github.com/gy/gosocket/pkg/pool"
 	"net/http"
 )
 
@@ -22,7 +23,7 @@ type Config struct {
 // ServerOptions server configurations
 // 下面的属性都有默认实现
 type ServerOptions struct {
-	readerBufPool *Pool[*bufio.Reader] // 读缓冲区
+	readerBufPool *pool.Pool[*bufio.Reader] // 读缓冲区
 
 	ReaderBufSize       int                                            // 读缓冲区大小
 	MaxReadPayloadSize  int                                            // 最大的读取消息长度

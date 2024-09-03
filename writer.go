@@ -3,7 +3,9 @@ package gosocket
 import (
 	"bytes"
 	"errors"
+	"github.com/gy/gosocket/internal/tools"
 	"github.com/gy/gosocket/internal/xerr"
+	"github.com/gy/gosocket/pkg/bufferpool"
 )
 
 func (wsConn *WsConn) WriteMessage(opcode Opcode, payload []byte) error {
@@ -15,7 +17,7 @@ func (wsConn *WsConn) WriteMessage(opcode Opcode, payload []byte) error {
 }
 
 func (wsConn *WsConn) WriteString(str string) error {
-	return wsConn.WriteMessage(OpcodeTextFrame, StringToBytesStandard(str))
+	return wsConn.WriteMessage(OpcodeTextFrame, tools.StringToBytesStandard(str))
 }
 
 func (wsConn *WsConn) WritePing(payload []byte) error {
@@ -46,13 +48,13 @@ func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
 	if err != nil {
 		return err
 	}
-	bufferPool.Put(frame)
+	bufferpool.Pools.Put(frame)
 	return nil
 }
 
 func (wsConn *WsConn) createFrame(opcode Opcode, payload []byte) (*bytes.Buffer, error) {
 	n := len(payload)
-	buf := bufferPool.Get(headerFrameLen + n)
+	buf := bufferpool.Pools.Get(headerFrameLen + n)
 	f := &Frame{}
 	headerLen, maskingKey := f.CreateHeader(true, opcode, wsConn.server, n)
 
