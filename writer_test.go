@@ -2,6 +2,7 @@ package gosocket
 
 import (
 	_ "embed"
+	"github.com/gy/gosocket/pkg/bufferpool"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
@@ -64,7 +65,11 @@ func (m *MockEventHandler) OnPong(conn *WsConn, payload []byte) {
 }
 
 func (m *MockEventHandler) OnMessage(conn *WsConn, msg *Message) {
+	// 写入消息后，将msg回收
 
+	// msg的回收
+	bufferpool.Pools.Put(msg.Content)
+	msg.Content = nil
 }
 
 func (m *MockEventHandler) OnStop(conn *WsConn, err error) {
