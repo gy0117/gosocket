@@ -60,7 +60,7 @@ func (wsConn *WsConn) createFrame(opcode Opcode, payload []byte) (*bytes.Buffer,
 
 	buf.Write(f.Header[:headerLen])
 	if !wsConn.server {
-		UnMaskPayload(payload, maskingKey)
+		unMaskPayload(payload, maskingKey)
 	}
 	buf.Write(payload)
 	return buf, nil
