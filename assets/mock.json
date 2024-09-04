@@ -1,0 +1,308 @@
+{
+  "user": {
+    "id": 12345,
+    "username": "alicejohnson",
+    "fullName": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "phone": "+1-800-555-1234",
+    "isVerified": true,
+    "profile": {
+      "age": 28,
+      "gender": "female",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA",
+        "zipcode": "94107",
+        "address": "123 Market St, Apt 4",
+        "country": "USA"
+      },
+      "bio": "Tech enthusiast, coffee lover, and avid reader. Always exploring new places.",
+      "avatarUrl": "https://example.com/profiles/alice.jpg",
+      "socialMedia": {
+        "twitter": "@alicejohnson",
+        "linkedin": "https://www.linkedin.com/in/alicejohnson",
+        "instagram": "@alice_explores"
+      }
+    },
+    "preferences": {
+      "newsletter": true,
+      "notifications": {
+        "email": true,
+        "sms": false,
+        "push": true
+      },
+      "language": "en",
+      "theme": "dark",
+      "timezone": "PST",
+      "contentPreferences": {
+        "categories": ["technology", "travel", "food"],
+        "frequency": "daily"
+      }
+    }
+  },
+  "friends": [
+    {
+      "id": 67890,
+      "username": "bobsmith",
+      "name": "Bob Smith",
+      "contact": "bob.smith@example.com",
+      "profile": {
+        "age": 32,
+        "gender": "male",
+        "location": {
+          "city": "Los Angeles",
+          "state": "CA",
+          "zipcode": "90001",
+          "country": "USA"
+        },
+        "bio": "Photographer & nature lover. Capturing the beauty of the world one photo at a time.",
+        "socialMedia": {
+          "twitter": "@bobsmith",
+          "instagram": "@bob_in_la",
+          "flickr": "https://www.flickr.com/photos/bobsmith"
+        }
+      }
+    },
+    {
+      "id": 54321,
+      "username": "carolwhite",
+      "name": "Carol White",
+      "contact": "carol.white@example.com",
+      "profile": {
+        "age": 29,
+        "gender": "female",
+        "location": {
+          "city": "New York",
+          "state": "NY",
+          "zipcode": "10001",
+          "country": "USA"
+        },
+        "bio": "Food blogger and recipe creator. Sharing my love for cooking with the world.",
+        "socialMedia": {
+          "twitter": "@carolwhite",
+          "linkedin": "https://www.linkedin.com/in/carolwhite",
+          "pinterest": "@carolcooks"
+        }
+      }
+    }
+  ],
+  "recentActivities": [
+    {
+      "type": "post",
+      "content": "Had a great day at the beach! 🌊",
+      "timestamp": "2024-08-30T10:00:00Z",
+      "location": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+      },
+      "likes": 150,
+      "comments": 12,
+      "shares": 5,
+      "media": [
+        "https://example.com/media/beach.jpg",
+        "https://example.com/media/sunset.jpg"
+      ]
+    },
+    {
+      "type": "like",
+      "contentId": 98765,
+      "contentSummary": "Tech trends in 2024",
+      "timestamp": "2024-08-29T15:30:00Z"
+    },
+    {
+      "type": "purchase",
+      "item": "Wireless Headphones",
+      "price": 199.99,
+      "timestamp": "2024-08-28T09:15:00Z",
+      "location": {
+        "latitude": 34.0522,
+        "longitude": -118.2437
+      }
+    },
+    {
+      "type": "review",
+      "item": "Laptop",
+      "rating": 4.5,
+      "comment": "Great performance but battery life could be better.",
+      "timestamp": "2024-08-25T18:45:00Z"
+    }
+  ],
+  "orderHistory": [
+    {
+      "orderId": "ORD123456",
+      "date": "2024-08-15",
+      "items": [
+        {
+          "productId": "PROD001",
+          "name": "Laptop",
+          "quantity": 1,
+          "price": 999.99
+        },
+        {
+          "productId": "PROD002",
+          "name": "Mouse",
+          "quantity": 1,
+          "price": 49.99
+        }
+      ],
+      "total": 1049.98,
+      "status": "shipped",
+      "shippingAddress": {
+        "street": "123 Market St, Apt 4",
+        "city": "San Francisco",
+        "state": "CA",
+        "zipcode": "94107",
+        "country": "USA"
+      },
+      "trackingNumber": "1Z999AA10123456784"
+    },
+    {
+      "orderId": "ORD123457",
+      "date": "2024-07-20",
+      "items": [
+        {
+          "productId": "PROD003",
+          "name": "Smartphone",
+          "quantity": 1,
+          "price": 799.99
+        }
+      ],
+      "total": 799.99,
+      "status": "delivered",
+      "shippingAddress": {
+        "street": "123 Market St, Apt 4",
+        "city": "San Francisco",
+        "state": "CA",
+        "zipcode": "94107",
+        "country": "USA"
+      },
+      "deliveryDate": "2024-07-22"
+    }
+  ],
+  "paymentInfo": {
+    "defaultPaymentMethod": "creditCard",
+    "creditCards": [
+      {
+        "cardNumber": "**** **** **** 1234",
+        "expiryDate": "12/25",
+        "cardholderName": "Alice Johnson",
+        "billingAddress": {
+          "street": "123 Market St, Apt 4",
+          "city": "San Francisco",
+          "state": "CA",
+          "zipcode": "94107",
+          "country": "USA"
+        },
+        "securityCode": "***"
+      }
+    ],
+    "paypal": {
+      "email": "alice.paypal@example.com"
+    },
+    "transactionHistory": [
+      {
+        "transactionId": "TXN789012",
+        "date": "2024-08-28",
+        "amount": 199.99,
+        "method": "creditCard",
+        "status": "completed"
+      },
+      {
+        "transactionId": "TXN789013",
+        "date": "2024-08-25",
+        "amount": 49.99,
+        "method": "paypal",
+        "status": "completed"
+      }
+    ]
+  },
+  "devices": [
+    {
+      "deviceId": "dev123",
+      "deviceName": "iPhone 12",
+      "os": "iOS 16",
+      "lastLogin": "2024-08-30T08:45:00Z",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "USA"
+      }
+    },
+    {
+      "deviceId": "dev456",
+      "deviceName": "MacBook Pro",
+      "os": "macOS 14",
+      "lastLogin": "2024-08-29T12:30:00Z",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "USA"
+      }
+    }
+  ],
+  "browsingHistory": [
+    {
+      "url": "https://example.com/articles/tech-trends-2024",
+      "title": "Tech Trends in 2024",
+      "timestamp": "2024-08-29T14:00:00Z"
+    },
+    {
+      "url": "https://example.com/products/wireless-headphones",
+      "title": "Wireless Headphones - Best Deals",
+      "timestamp": "2024-08-28T09:10:00Z"
+    }
+  ],
+  "favorites": [
+    {
+      "type": "article",
+      "title": "Top 10 Programming Languages in 2024",
+      "url": "https://example.com/articles/top-10-programming-languages"
+    },
+    {
+      "type": "product",
+      "name": "Ergonomic Chair",
+      "productId": "PROD004",
+      "price": 249.99
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif123",
+      "type": "order",
+      "message": "Your order ORD123456 has been shipped.",
+      "timestamp": "2024-08-16T10:00:00Z",
+      "read": false
+    },
+    {
+      "id": "notif124",
+      "type": "promotion",
+      "message": "Get 20% off on your next purchase!",
+      "timestamp": "2024-08-20T14:00:00Z",
+      "read": true
+    }
+  ],
+  "securitySettings": {
+    "twoFactorAuthentication": true,
+    "loginAlerts": true,
+    "recoveryEmail": "alice.recovery@example.com",
+    "securityQuestions": [
+      {
+        "question": "What was your first pet's name?",
+        "answerHash": "5f4dcc3b5aa765d61d8327deb882cf99"
+      },
+      {
+        "question": "What is your mother's maiden name?",
+        "answerHash": "5f4dcc3b5aa765d61d8327deb882cf99"
+      }
+    ]
+  },
+  "privacySettings": {
+    "profileVisibility": "friendsOnly",
+    "searchVisibility": true,
+    "dataSharing": false,
+    "adPreferences": {
+      "personalizedAds": true,
+      "adTopics": ["technology", "travel", "food"]
+    }
+  }
+}

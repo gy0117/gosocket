@@ -1,4 +1,5 @@
 # gosocket    
 
-## Todo
-- [ ] 搭建基本结构
+## Highlights
+- [x] 支持广播
+- [ ] 支持context上下文管理

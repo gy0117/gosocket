@@ -80,4 +80,6 @@ const (
 // WebSocket 协议允许应用程序定义 4000–4999 范围内的状态码
 const (
 	ErrHandShake ErrCode = 4001
+	// ErrConnClosed 连接已经关闭
+	ErrConnClosed ErrCode = 4002
 )

@@ -45,7 +45,7 @@ func (wsConn *WsConn) readMessage() error {
 	}
 
 	if wsConn.frame.GetMask() {
-		UnMaskPayload(payloadBytes, wsConn.frame.GetMaskingKey())
+		unMaskPayload(payloadBytes, wsConn.frame.GetMaskingKey())
 	}
 
 	fin := wsConn.frame.GetFIN()
@@ -110,7 +110,7 @@ func (wsConn *WsConn) readControlFrame() error {
 		mask := wsConn.frame.GetMask()
 		if mask {
 			// 还原payload
-			UnMaskPayload(payload, wsConn.frame.GetMaskingKey())
+			unMaskPayload(payload, wsConn.frame.GetMaskingKey())
 		}
 	}
 	opcode := wsConn.frame.GetOpcode()

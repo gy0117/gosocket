@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/gy/gosocket/internal/task"
 	"github.com/gy/gosocket/internal/xerr"
 	"log"
 	"net"
@@ -25,8 +26,9 @@ type WsConn struct {
 	// 当前连接 管理k-v值的
 	sm SessionManager
 	// 连接是否关闭，0 未关闭，1 关闭
-	isClose int32
-	Recycle func()
+	isClose   int32
+	Recycle   func()
+	taskQueue *task.TaskQueue
 }
 
 // ReadLoop 循环读消息
