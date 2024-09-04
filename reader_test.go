@@ -19,7 +19,7 @@ func BenchmarkReadMessage(b *testing.B) {
 			server:       false,
 		}
 
-		frame, _ := client.createFrame(OpcodeTextFrame, mockData)
+		frame, _ := client.createFrame(true, OpcodeTextFrame, mockData)
 
 		reader := bytes.NewBuffer(frame.Bytes())
 

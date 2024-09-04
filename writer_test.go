@@ -13,7 +13,7 @@ func TestCreateFrame(t *testing.T) {
 		wsConn := WsConn{
 			server: true,
 		}
-		frame, err := wsConn.createFrame(OpcodeTextFrame, []byte("abc"))
+		frame, err := wsConn.createFrame(true, OpcodeTextFrame, []byte("abc"))
 		t.Log("frame", string(frame.Bytes()))
 		assert.NoError(t, err)
 	})

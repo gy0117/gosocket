@@ -40,7 +40,7 @@ func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
 	if wsConn.config.OpenUTF8Check && !isValidText(opcode, payload) {
 		return xerr.NewError(xerr.ErrCloseUnSupported, errors.New("invalid text encode, must be utf-8 encode"))
 	}
-	frame, err := wsConn.createFrame(opcode, payload)
+	frame, err := wsConn.createFrame(true, opcode, payload)
 	if err != nil {
 		return err
 	}
@@ -52,11 +52,11 @@ func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
 	return nil
 }
 
-func (wsConn *WsConn) createFrame(opcode Opcode, payload []byte) (*bytes.Buffer, error) {
+func (wsConn *WsConn) createFrame(fin bool, opcode Opcode, payload []byte) (*bytes.Buffer, error) {
 	n := len(payload)
 	buf := bufferpool.Pools.Get(headerFrameLen + n)
 	f := &Frame{}
-	headerLen, maskingKey := f.CreateHeader(true, opcode, wsConn.server, n)
+	headerLen, maskingKey := f.CreateHeader(fin, opcode, wsConn.server, n)
 
 	buf.Write(f.Header[:headerLen])
 	if !wsConn.server {
