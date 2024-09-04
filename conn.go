@@ -26,9 +26,10 @@ type WsConn struct {
 	// 当前连接 管理k-v值的
 	sm SessionManager
 	// 连接是否关闭，0 未关闭，1 关闭
-	isClose   int32
-	Recycle   func()
-	taskQueue *task.TaskQueue
+	isClose        int32
+	Recycle        func()
+	taskQueue      *task.TaskQueue
+	enableCompress bool
 }
 
 // ReadLoop 循环读消息
@@ -60,10 +61,18 @@ func (wsConn *WsConn) handleCloseEvent(buf *bytes.Buffer) error {
 }
 
 func (wsConn *WsConn) handleMessageEvent(msg *Message) error {
+	if msg.compress {
+		message, err := decompressMessage(msg.Content.Bytes())
+		if err != nil {
+			return err
+		}
+		msg.Content.Reset()
+		msg.Content.Write(message)
+
+	}
 	if wsConn.config.OpenUTF8Check && !msg.IsValidText() {
 		return xerr.NewError(xerr.ErrCloseUnSupported, errors.New("invalid text encode, must be utf-8 encode"))
 	}
-	// TODO 消息并行处理
 	wsConn.eventHandler.OnMessage(wsConn, msg)
 	return nil
 }

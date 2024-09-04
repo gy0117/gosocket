@@ -2,7 +2,7 @@ package gosocket
 
 import (
 	"bytes"
-	"github.com/gy/gosocket/pkg/bufferpool"
+	"github.com/gy/gosocket/internal/bufferpool"
 	"net"
 )
 
@@ -32,7 +32,6 @@ func (w *ResponseWriter) AddHeader(key string, value string) {
 	w.buf.WriteString("\r\n")
 }
 
-// TODO 需要设置超时
 func (w *ResponseWriter) Write(conn net.Conn) error {
 	w.buf.WriteString("\r\n")
 	if _, err := w.buf.WriteTo(conn); err != nil {

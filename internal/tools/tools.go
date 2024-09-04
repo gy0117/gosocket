@@ -3,6 +3,7 @@ package tools
 import (
 	"crypto/sha1"
 	"encoding/base64"
+	"github.com/gy/gosocket/internal/types"
 )
 
 // CeilPow2 2^k >= x，返回最小的2^k
@@ -26,4 +27,8 @@ func GetSecWebSocketAccept(key string) string {
 	hash.Write(b)
 	hashed := hash.Sum(nil)
 	return base64.StdEncoding.EncodeToString(hashed)
+}
+
+func GetSecWebSocketExtensions() string {
+	return types.PermessageDeflate
 }

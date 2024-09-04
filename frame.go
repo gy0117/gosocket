@@ -53,9 +53,10 @@ const (
 // 延续帧
 type continuationFrame struct {
 	// 是否已经初始化
-	hasInit bool
-	opcode  Opcode
-	buf     *bytes.Buffer
+	hasInit  bool
+	opcode   Opcode
+	buf      *bytes.Buffer
+	compress bool
 }
 
 type Frame struct {
@@ -80,10 +81,15 @@ func NewFrame() *Frame {
 //
 //}
 
-func (f *Frame) CreateHeader(fin bool, opcode Opcode, server bool, payloadLen int) (headerLen int, maskingKey []byte) {
+func (f *Frame) CreateHeader(fin bool, opcode Opcode, server bool, payloadLen int, enableCompress bool) (headerLen int, maskingKey []byte) {
 	if fin {
 		f.Header[0] |= 0x80
 	}
+
+	if enableCompress {
+		f.Header[0] |= 0x40
+	}
+
 	f.Header[0] |= byte(opcode) & 0x0F
 
 	headerLen = 2
@@ -189,10 +195,11 @@ func (f *Frame) GetMaskingKey() []byte {
 	return f.Header[10:14]
 }
 
-func (f *Frame) InitContinuationFrame(opcode Opcode, payloadLen int) {
+func (f *Frame) InitContinuationFrame(opcode Opcode, payloadLen int, compress bool) {
 	f.Continuation.hasInit = true
 	f.Continuation.opcode = opcode
 	f.Continuation.buf = bytes.NewBuffer(make([]byte, 0, payloadLen))
+	f.Continuation.compress = compress
 }
 
 func (f *Frame) HasInitContinuationFrame() bool {

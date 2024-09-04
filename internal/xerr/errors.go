@@ -1,17 +1,7 @@
 package xerr
 
-//var _ error = (*ErrCode)(nil)
-//
-//var errMap = map[ErrCode]string{
-//	ErrInternalServer: "internal server error",
-//}
-
 // ErrCode https://developer.mozilla.org/zh-CN/docs/Web/API/CloseEvent
 type ErrCode uint16
-
-//func (e ErrCode) Error() string {
-//	return errMap[e]
-//}
 
 type Error struct {
 	ECode ErrCode

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gy/gosocket"
-	"github.com/gy/gosocket/pkg/cmap"
+	"github.com/gy/gosocket/internal/cmap"
 	"log"
 )
 
@@ -17,7 +17,6 @@ func (w *WebSocketHandler) OnStart(conn *gosocket.WsConn) {
 	log.Println("WebSocketHandler ---> OnStart, name: ", name)
 	c, ok := w.sessionMap.Get(name.(string))
 	if ok {
-		// TODO 关闭原先的，重新
 		log.Printf("connection %v has existed, name: %s\n", c, name)
 		return
 	}

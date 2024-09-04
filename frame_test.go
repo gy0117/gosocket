@@ -23,7 +23,7 @@ func TestParseHeader(t *testing.T) {
 		s, c := net.Pipe()
 		go func() {
 			f := Frame{}
-			f.CreateHeader(true, OpcodeTextFrame, false, 100)
+			f.CreateHeader(true, OpcodeTextFrame, false, 100, false)
 			c.Write(f.Header[:2])
 			c.Close()
 		}()

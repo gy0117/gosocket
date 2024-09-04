@@ -10,6 +10,8 @@ type Message struct {
 	Opcode Opcode
 	// 消息内容
 	Content *bytes.Buffer
+	// 消息是否压缩
+	compress bool
 }
 
 // IsValidText 如果opcode为0x1，则payload必须时utf-b编码的文本数据（规定）

@@ -2,7 +2,7 @@ package gosocket
 
 import (
 	"bufio"
-	"github.com/gy/gosocket/pkg/pool"
+	"github.com/gy/gosocket/internal/pool"
 	"net/http"
 )
 

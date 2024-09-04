@@ -3,9 +3,9 @@ package gosocket
 import (
 	"bytes"
 	"errors"
+	"github.com/gy/gosocket/internal/bufferpool"
 	"github.com/gy/gosocket/internal/tools"
 	"github.com/gy/gosocket/internal/xerr"
-	"github.com/gy/gosocket/pkg/bufferpool"
 )
 
 func (wsConn *WsConn) WriteMessage(opcode Opcode, payload []byte) error {
@@ -29,7 +29,6 @@ func (wsConn *WsConn) WritePong(payload []byte) error {
 }
 
 func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
-	// TODO 状态检查
 	wsConn.lock.Lock()
 	defer wsConn.lock.Unlock()
 
@@ -53,10 +52,17 @@ func (wsConn *WsConn) writeMessage(opcode Opcode, payload []byte) error {
 }
 
 func (wsConn *WsConn) createFrame(fin bool, opcode Opcode, payload []byte) (*bytes.Buffer, error) {
+	if wsConn.enableCompress && opcode.IsDataFrame() {
+		compressedPayload, err := compressMessage(payload)
+		if err != nil {
+			return nil, err
+		}
+		payload = compressedPayload
+	}
 	n := len(payload)
 	buf := bufferpool.Pools.Get(headerFrameLen + n)
 	f := &Frame{}
-	headerLen, maskingKey := f.CreateHeader(fin, opcode, wsConn.server, n)
+	headerLen, maskingKey := f.CreateHeader(fin, opcode, wsConn.server, n, wsConn.enableCompress)
 
 	buf.Write(f.Header[:headerLen])
 	if !wsConn.server {

@@ -2,7 +2,7 @@ package gosocket
 
 import (
 	_ "embed"
-	"github.com/gy/gosocket/pkg/bufferpool"
+	"github.com/gy/gosocket/internal/bufferpool"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"

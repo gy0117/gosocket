@@ -3,13 +3,14 @@ package gosocket
 import (
 	"bufio"
 	"errors"
-	"github.com/gy/gosocket/internal"
+	"github.com/gy/gosocket/internal/cmap"
+	"github.com/gy/gosocket/internal/pool"
 	"github.com/gy/gosocket/internal/tools"
+	"github.com/gy/gosocket/internal/types"
 	"github.com/gy/gosocket/internal/xerr"
-	"github.com/gy/gosocket/pkg/cmap"
-	"github.com/gy/gosocket/pkg/pool"
 	"net"
 	"net/http"
+	"strings"
 )
 
 type HookFunc interface {
@@ -57,27 +58,36 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 	}
 
 	// 2.2 return response
-	websocketKey := r.Header.Get(internal.SecWebSocketKeyPair.Key)
+	websocketKey := r.Header.Get(types.SecWebSocketKeyPair.Key)
 	if len(websocketKey) == 0 {
 		return nil, xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, websocketKey is nil"))
 	}
+
 	respWriter := NewResponseWriter()
 	defer respWriter.Close()
 
-	respWriter.AddHeader(internal.SecWebSocketAcceptPair.Key, tools.GetSecWebSocketAccept(websocketKey))
+	respWriter.AddHeader(types.SecWebSocketAcceptPair.Key, tools.GetSecWebSocketAccept(websocketKey))
+
+	extensions := r.Header.Get(types.SecWebSocketExtensionsPair.Key)
+	enableCompress := parseExtensions(extensions)
+	if enableCompress {
+		respWriter.AddHeader(types.SecWebSocketExtensionsPair.Key, tools.GetSecWebSocketExtensions())
+	}
+
 	if err = respWriter.Write(netConn); err != nil {
 		return nil, err
 	}
 
 	// 2.3 构造websocket conn对象
 	wsConn := &WsConn{
-		conn:         netConn,
-		bufReader:    reader,
-		eventHandler: up.eventHandler,
-		frame:        NewFrame(),
-		config:       up.options.CreateConfig(),
-		sm:           sm,
-		server:       true,
+		conn:           netConn,
+		bufReader:      reader,
+		eventHandler:   up.eventHandler,
+		frame:          NewFrame(),
+		config:         up.options.CreateConfig(),
+		sm:             sm,
+		server:         true,
+		enableCompress: enableCompress,
 	}
 
 	wsConn.Recycle = func() {
@@ -86,6 +96,16 @@ func (up *Upgrade) upgradeInner(w http.ResponseWriter, r *http.Request, sm Sessi
 		wsConn.bufReader = nil
 	}
 	return wsConn, nil
+}
+
+func parseExtensions(extensions string) bool {
+	splits := strings.Split(extensions, ";")
+	for _, s := range splits {
+		if s == types.PermessageDeflate {
+			return true
+		}
+	}
+	return false
 }
 
 func (up *Upgrade) hijack(w http.ResponseWriter) (net.Conn, *bufio.Reader, error) {
@@ -104,13 +124,13 @@ func checkHeader(r *http.Request) error {
 	if r.Method != http.MethodGet {
 		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, method is not GET"))
 	}
-	if r.Header.Get(internal.ConnectionPair.Key) != internal.ConnectionPair.Value {
+	if r.Header.Get(types.ConnectionPair.Key) != types.ConnectionPair.Value {
 		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header connection error"))
 	}
-	if r.Header.Get(internal.UpgradePair.Key) != internal.UpgradePair.Value {
+	if r.Header.Get(types.UpgradePair.Key) != types.UpgradePair.Value {
 		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header upgrade error"))
 	}
-	if r.Header.Get(internal.SecWebSocketVersionPair.Key) != internal.SecWebSocketVersionPair.Value {
+	if r.Header.Get(types.SecWebSocketVersionPair.Key) != types.SecWebSocketVersionPair.Value {
 		return xerr.NewError(xerr.ErrHandShake, errors.New("hand shake failed, header Sec-WebSocket-Version error"))
 	}
 	return nil

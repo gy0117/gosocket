@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/gy/gosocket/internal/bufferpool"
 	"github.com/gy/gosocket/internal/xerr"
-	"github.com/gy/gosocket/pkg/bufferpool"
 	"io"
 	"unsafe"
 )
@@ -21,8 +21,7 @@ func (wsConn *WsConn) readMessage() error {
 	}
 
 	// 在大多数情况下，WebSocket 帧的 RSV1、RSV2、RSV3 位的值都是 0，除非使用了特定的 WebSocket 扩展功能，这些位才可能被设置为 1。
-	// TODO 暂时不考虑压缩扩展
-	if wsConn.frame.GetRSV1() || wsConn.frame.GetRSV2() || wsConn.frame.GetRSV3() {
+	if !wsConn.enableCompress && (wsConn.frame.GetRSV1() || wsConn.frame.GetRSV2() || wsConn.frame.GetRSV3()) {
 		return xerr.NewError(xerr.ErrCloseProtocol, nil)
 	}
 
@@ -30,6 +29,7 @@ func (wsConn *WsConn) readMessage() error {
 		return err
 	}
 
+	compress := wsConn.enableCompress && wsConn.frame.GetRSV1()
 	var opcode = wsConn.frame.GetOpcode()
 	if !opcode.IsDataFrame() {
 		return wsConn.readControlFrame()
@@ -55,8 +55,9 @@ func (wsConn *WsConn) readMessage() error {
 		*(*[]byte)(unsafe.Pointer(buf)) = payloadBytes
 
 		msg := &Message{
-			Opcode:  opcode,
-			Content: buf,
+			Opcode:   opcode,
+			Content:  buf,
+			compress: compress,
 		}
 		return wsConn.handleMessageEvent(msg)
 	}
@@ -64,7 +65,7 @@ func (wsConn *WsConn) readMessage() error {
 	// 处理分片消息
 	if isFirstFrame(fin, opcode) {
 		// 这个表示是第一帧
-		wsConn.frame.InitContinuationFrame(opcode, payloadLen)
+		wsConn.frame.InitContinuationFrame(opcode, payloadLen, compress)
 	}
 	if !wsConn.frame.HasInitContinuationFrame() {
 		return xerr.NewError(xerr.ErrCloseProtocol, errors.New("continuation frame has init"))
@@ -82,8 +83,9 @@ func (wsConn *WsConn) readMessage() error {
 	}
 	// 消息已经读完
 	msg := &Message{
-		Opcode:  wsConn.frame.Continuation.opcode, // 分片消息，需要取第一帧的opcode
-		Content: wsConn.frame.Continuation.buf,
+		Opcode:   wsConn.frame.Continuation.opcode, // 分片消息，需要取第一帧的opcode
+		Content:  wsConn.frame.Continuation.buf,
+		compress: wsConn.frame.Continuation.compress,
 	}
 	wsConn.frame.ResetContinuation()
 	return wsConn.handleMessageEvent(msg)
